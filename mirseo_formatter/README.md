@@ -35,6 +35,19 @@ This project uses `maturin` to build the Rust library and create Python bindings
 
 ## Usage
 
+It is highly recommended to initialize the analyzer before using it, especially if you are not running your script from the project root directory.
+
+```python
+import mirseo_formatter as mf
+
+# Initialize the analyzer with the path to your rules file
+mf.init("rules.json")
+
+# Now you can use the analyze function
+result = mf.analyze("some prompt", lang='en', mode='ids')
+print(result)
+```
+
 Here is a basic example of how to use the `analyze` function:
 
 ```python

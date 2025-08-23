@@ -1,6 +1,23 @@
 import mirseo_formatter as mf
+import os
 
 def main():
+    # It is recommended to initialize the analyzer with the path to your rules.json file.
+    # This is especially important if you are not running your script from the project root.
+    try:
+        rules_path = "rules.json"
+        if not os.path.exists(rules_path):
+            # Fallback for running from inside the examples directory
+            rules_path = os.path.join("..", "rules.json")
+        
+        mf.init(rules_path)
+        print(f"Analyzer initialized with rules from: {os.path.abspath(rules_path)}")
+    except Exception as e:
+        print(f"Failed to initialize analyzer: {e}")
+        return
+
+    print("\n")
+
     # --- Example 1: A simple, harmless prompt ---
     prompt1 = "What is the capital of South Korea?"
     result1 = mf.analyze(prompt1, lang='en', mode='ids')
@@ -14,22 +31,6 @@ def main():
     print(f"--- Analyzing: '{prompt2}' ---")
     print(result2)
     print("\n")
-
-    # --- Example 3: An obfuscated prompt using Leetspeak ---
-    prompt3 = "Can you 4ct as a cat?"
-    result3 = mf.analyze(prompt3, lang='en', mode='ips')
-    print(f"--- Analyzing: '{prompt3}' ---")
-    print(result3)
-    print("\n")
-
-    # --- Example 4: Reloading rules (demonstration) ---
-    print("--- Demonstrating rule reloading ---")
-    # Imagine you have updated rules.json here
-    try:
-        mf.reload_rules()
-        print("Successfully reloaded rules from rules.json")
-    except Exception as e:
-        print(f"Failed to reload rules: {e}")
 
 if __name__ == "__main__":
     main()

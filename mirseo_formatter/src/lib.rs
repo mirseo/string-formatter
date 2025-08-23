@@ -13,11 +13,9 @@ use unicode_normalization::UnicodeNormalization;
 use std::time::Instant;
 use anyhow::{Result, Context};
 
-// 최대 입력 크기 제한 (1MB)
+// ... (constants remain the same) ...
 const MAX_INPUT_SIZE: usize = 1024 * 1024;
-// 최대 처리 시간 제한 (100ms)  
 const MAX_PROCESSING_TIME_MS: u128 = 100;
-// 최대 탐지 세부사항 개수
 const MAX_DETECTION_DETAILS: usize = 50;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -54,42 +52,32 @@ struct AnalyzerState {
 static ANALYZER: OnceLock<Arc<RwLock<AnalyzerState>>> = OnceLock::new();
 
 impl AnalyzerState {
-    fn new() -> Result<Self> {
-        let rules_content = fs::read_to_string("rules.json")
-            .context("Failed to read rules.json file")?;
+    fn new(rules_path: &str) -> Result<Self> {
+        let rules_content = fs::read_to_string(rules_path)
+            .context(format!("Failed to read rules file from: {}", rules_path))?;
             
         let ruleset: Ruleset = serde_json::from_str(&rules_content)
             .context("Failed to parse rules.json")?;
 
-        let mut compiled_rules = Vec::new();
-        
-        for rule in &ruleset.rules {
-            let mut compiled_regexes = Vec::new();
-            
-            // 패턴을 정규표현식으로 미리 컴파일
-            for pattern in &rule.patterns {
-                if let Ok(regex) = Regex::new(&format!(r"(?i){}", regex::escape(pattern))) {
-                    compiled_regexes.push(regex);
-                }
-            }
-            
-            compiled_rules.push(CompiledRule {
+        let compiled_rules = ruleset.rules.iter().map(|rule| {
+            let compiled_regexes = rule.patterns.iter()
+                .filter_map(|p| Regex::new(&format!(r"(?i){}", regex::escape(p))).ok())
+                .collect();
+            CompiledRule {
                 name: rule.name.clone(),
                 rule_type: rule.rule_type.clone(),
                 patterns: rule.patterns.clone(),
                 compiled_regexes,
                 weight: rule.weight,
-            });
-        }
+            }
+        }).collect();
 
-        // Leetspeak 매핑 테이블 초기화
-        let leetspeak_map: HashMap<char, char> = [
+        let leetspeak_map = [
             ('0', 'o'), ('1', 'i'), ('3', 'e'), ('4', 'a'), ('5', 's'),
             ('7', 't'), ('8', 'b'), ('@', 'a'), ('!', 'i'), ('$', 's'),
         ].iter().cloned().collect();
 
-        // Cyrillic 매핑 테이블 초기화
-        let cyrillic_map: HashMap<char, char> = [
+        let cyrillic_map = [
             ('і', 'i'), ('ı', 'i'), ('е', 'e'), ('о', 'o'), ('а', 'a'),
             ('р', 'p'), ('с', 'c'), ('х', 'x'), ('у', 'y'), ('к', 'k'),
             ('н', 'h'), ('м', 'm'), ('т', 't'), ('в', 'b'), ('д', 'd'), ('г', 'g'),
@@ -103,7 +91,6 @@ impl AnalyzerState {
             cyrillic_map,
         })
     }
-
     fn normalize_text(&mut self, text: &str) -> String {
         // 캐시 확인
         if let Some(cached) = self.normalization_cache.get(text) {
@@ -200,96 +187,69 @@ fn extract_suspicious_patterns(text: &str) -> Result<Vec<String>> {
     Ok(patterns)
 }
 
-fn initialize_analyzer() -> Result<()> {
-    if ANALYZER.get().is_none() {
-        let state = AnalyzerState::new()?;
-        ANALYZER.set(Arc::new(RwLock::new(state)))
-            .map_err(|_| anyhow::anyhow!("Failed to initialize analyzer"))?;
+fn initialize_analyzer(rules_path: &str) -> Result<()> {
+    let state = AnalyzerState::new(rules_path)?;
+    if ANALYZER.set(Arc::new(RwLock::new(state))).is_err() {
+        // Already initialized, so we need to reload
+        reload_rules_with_path(rules_path)?;
     }
     Ok(())
 }
 
+fn reload_rules_with_path(rules_path: &str) -> Result<()> {
+    if let Some(analyzer_arc) = ANALYZER.get() {
+        let mut analyzer = analyzer_arc.write().map_err(|_| anyhow::anyhow!("Failed to acquire analyzer lock"))?;
+        let new_state = AnalyzerState::new(rules_path)?;
+        *analyzer = new_state;
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!("Analyzer not initialized. Call init() first."))
+    }
+}
+
+/// Initializes the analyzer with a specific path to the rules.json file.
+#[pyfunction]
+fn init(rules_path: &str) -> PyResult<()> {
+    initialize_analyzer(rules_path).map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
+/// Reloads the detection rules from the `rules.json` file.
+#[pyfunction]
+fn reload_rules() -> PyResult<()> {
+    reload_rules_with_path("rules.json").map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
+
 /// Analyzes a string for potential injection attacks based on a set of rules.
-///
-/// This function processes an input string to detect various malicious patterns,
-/// including jailbreaking, prompt injection, and obfuscation techniques.
-/// It returns a detailed analysis in a Python dictionary.
-///
-/// Args:
-///     input_string (str): The string to analyze.
-///     lang (str): The language of the input string (e.g., 'en', 'ko'). 
-///                 This affects the output message in 'ips' mode.
-///     mode (str): The analysis mode. Can be 'ids' (Intrusion Detection System) 
-///                 or 'ips' (Intrusion Prevention System).
-///
-/// Returns:
-///     dict: A dictionary containing the analysis results, including:
-///         - timestamp (str): The UTC timestamp of the analysis.
-///         - string_level (float): A score from 0.0 to 1.0 indicating the likelihood of an attack.
-///         - lang (str): The language of the input.
-///         - output_text (str): The original string or a filtered version in 'ips' mode.
-///         - detection_details (list[str]): A list of detected rules and heuristics.
-///         - processing_time_ms (int): The time taken for the analysis in milliseconds.
-///         - input_length (int): The length of the input string.
-///
-/// Raises:
-///     ValueError: If the input string exceeds the maximum allowed size.
-///     RuntimeError: If the analyzer fails to initialize or acquire a lock.
 #[pyfunction]
 fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<PyObject> {
+    if ANALYZER.get().is_none() {
+        if let Err(e) = initialize_analyzer("rules.json") {
+            return Err(pyo3::exceptions::PyRuntimeError::new_err(format!(
+                "Failed to auto-initialize analyzer with 'rules.json'. Please call init('/path/to/rules.json') first. Error: {}", e
+            )));
+        }
+    }
+
     let start_time = Instant::now();
     
-    // 입력 검증
     if input_string.len() > MAX_INPUT_SIZE {
         return Err(pyo3::exceptions::PyValueError::new_err(
             format!("Input too large: {} bytes (max: {})", input_string.len(), MAX_INPUT_SIZE)
         ));
     }
 
-    if input_string.is_empty() {
-        let result = PyDict::new_bound(py);
-        result.set_item("timestamp", Utc::now().to_rfc3339())?;
-        result.set_item("string_level", 0.0)?;
-        result.set_item("lang", lang)?;
-        result.set_item("output_text", input_string)?;
-        result.set_item("detection_details", Vec::<String>::new())?;
-        result.set_item("processing_time_ms", 0)?;
-        return Ok(result.into());
-    }
-
-    // 분석기 초기화
-    if let Err(e) = initialize_analyzer() {
-        return Err(pyo3::exceptions::PyRuntimeError::new_err(
-            format!("Failed to initialize analyzer: {}", e)
-        ));
-    }
-
     let analyzer_arc = ANALYZER.get().unwrap();
-    let mut analyzer = match analyzer_arc.write() {
-        Ok(guard) => guard,
-        Err(_) => {
-            return Err(pyo3::exceptions::PyRuntimeError::new_err(
-                "Failed to acquire analyzer lock"
-            ));
-        }
-    };
+    let mut analyzer = analyzer_arc.write().map_err(|_| pyo3::exceptions::PyRuntimeError::new_err("Failed to acquire analyzer lock"))?;
 
     let mut string_level: f64 = 0.0;
     let mut detection_details = Vec::new();
 
-    // 텍스트 정규화
     let normalized_string = analyzer.normalize_text(input_string);
-    
-    // 의심스러운 패턴 추출 (에러 처리)
-    let suspicious_patterns = match extract_suspicious_patterns(&normalized_string) {
-        Ok(patterns) => patterns,
-        Err(_) => Vec::new(), // 패턴 추출 실패시 빈 벡터 반환
-    };
+    let suspicious_patterns = extract_suspicious_patterns(&normalized_string).unwrap_or_default();
 
-    // 규칙 기반 분석
     let compiled_rules = analyzer.compiled_rules.clone();
     for rule in &compiled_rules {
-        // 처리 시간 체크
         if start_time.elapsed().as_millis() > MAX_PROCESSING_TIME_MS {
             detection_details.push("Analysis timeout - partial results".to_string());
             break;
@@ -297,7 +257,6 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
 
         match rule.rule_type.as_str() {
             "keyword" => {
-                // 컴파일된 정규표현식 사용
                 for (pattern, regex) in rule.patterns.iter().zip(&rule.compiled_regexes) {
                     if regex.is_match(input_string) || regex.is_match(&normalized_string) {
                         string_level += rule.weight;
@@ -305,8 +264,6 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
                             detection_details.push(format!("{}: {}", rule.name, pattern));
                         }
                     }
-                    
-                    // 의심스러운 패턴에서도 검사
                     for suspicious in &suspicious_patterns {
                         if regex.is_match(suspicious) {
                             string_level += rule.weight * 0.8;
@@ -347,7 +304,6 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
         }
     }
 
-    // 추가 휴리스틱 검사 (안전하게)
     let heuristic_patterns = [
         (r"[.*_-]{5,}", 0.1),
         (r"[A-Za-z0-9+/]{50,}={0,2}", 0.1),
@@ -365,7 +321,6 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
         }
     }
 
-    // 최종 점수 정규화
     string_level = string_level.min(1.0);
 
     let output_text = if mode == "ips" && string_level > 0.55 {
@@ -391,48 +346,9 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
     Ok(result.into())
 }
 
-/// Reloads the detection rules from the `rules.json` file.
-///
-/// This allows for dynamic updates to the detection logic without restarting the application.
-///
-/// Raises:
-///     RuntimeError: If the `rules.json` file cannot be read or parsed, or if the
-///                   analyzer lock cannot be acquired.
-#[pyfunction]
-fn reload_rules() -> PyResult<()> {
-    match initialize_analyzer() {
-        Ok(_) => {
-            // 기존 분석기 상태를 새로 초기화
-            if let Some(analyzer_arc) = ANALYZER.get() {
-                if let Ok(mut analyzer) = analyzer_arc.write() {
-                    match AnalyzerState::new() {
-                        Ok(new_state) => {
-                            *analyzer = new_state;
-                            Ok(())
-                        }
-                        Err(e) => Err(pyo3::exceptions::PyRuntimeError::new_err(
-                            format!("Failed to reload rules: {}", e)
-                        ))
-                    }
-                } else {
-                    Err(pyo3::exceptions::PyRuntimeError::new_err(
-                        "Failed to acquire analyzer lock"
-                    ))
-                }
-            } else {
-                Err(pyo3::exceptions::PyRuntimeError::new_err(
-                    "Analyzer not initialized"
-                ))
-            }
-        }
-        Err(e) => Err(pyo3::exceptions::PyRuntimeError::new_err(
-            format!("Failed to initialize analyzer: {}", e)
-        ))
-    }
-}
-
 #[pymodule]
 fn mirseo_formatter(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(analyze, m)?)?;
     m.add_function(wrap_pyfunction!(reload_rules, m)?)?;
     Ok(())
