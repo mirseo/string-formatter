@@ -209,6 +209,32 @@ fn initialize_analyzer() -> Result<()> {
     Ok(())
 }
 
+/// Analyzes a string for potential injection attacks based on a set of rules.
+///
+/// This function processes an input string to detect various malicious patterns,
+/// including jailbreaking, prompt injection, and obfuscation techniques.
+/// It returns a detailed analysis in a Python dictionary.
+///
+/// Args:
+///     input_string (str): The string to analyze.
+///     lang (str): The language of the input string (e.g., 'en', 'ko'). 
+///                 This affects the output message in 'ips' mode.
+///     mode (str): The analysis mode. Can be 'ids' (Intrusion Detection System) 
+///                 or 'ips' (Intrusion Prevention System).
+///
+/// Returns:
+///     dict: A dictionary containing the analysis results, including:
+///         - timestamp (str): The UTC timestamp of the analysis.
+///         - string_level (float): A score from 0.0 to 1.0 indicating the likelihood of an attack.
+///         - lang (str): The language of the input.
+///         - output_text (str): The original string or a filtered version in 'ips' mode.
+///         - detection_details (list[str]): A list of detected rules and heuristics.
+///         - processing_time_ms (int): The time taken for the analysis in milliseconds.
+///         - input_length (int): The length of the input string.
+///
+/// Raises:
+///     ValueError: If the input string exceeds the maximum allowed size.
+///     RuntimeError: If the analyzer fails to initialize or acquire a lock.
 #[pyfunction]
 fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<PyObject> {
     let start_time = Instant::now();
@@ -365,6 +391,13 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
     Ok(result.into())
 }
 
+/// Reloads the detection rules from the `rules.json` file.
+///
+/// This allows for dynamic updates to the detection logic without restarting the application.
+///
+/// Raises:
+///     RuntimeError: If the `rules.json` file cannot be read or parsed, or if the
+///                   analyzer lock cannot be acquired.
 #[pyfunction]
 fn reload_rules() -> PyResult<()> {
     match initialize_analyzer() {
