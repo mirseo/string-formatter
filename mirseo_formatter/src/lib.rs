@@ -8,10 +8,12 @@ use serde::Deserialize;
 use std::fs;
 use std::sync::{Arc, RwLock, OnceLock};
 use std::collections::HashMap;
-use regex::Regex;
+use regex::{Regex, RegexBuilder};
+use std::time::Duration;
 use unicode_normalization::UnicodeNormalization;
 use std::time::Instant;
 use anyhow::{Result, Context};
+use log::{warn, error};
 
 // ... (constants remain the same) ...
 const MAX_INPUT_SIZE: usize = 1024 * 1024;
@@ -61,7 +63,18 @@ impl AnalyzerState {
 
         let compiled_rules = ruleset.rules.iter().map(|rule| {
             let compiled_regexes = rule.patterns.iter()
-                .filter_map(|p| Regex::new(&format!(r"(?i){}", regex::escape(p))).ok())
+                .filter_map(|p| {
+                    match RegexBuilder::new(&format!(r"(?i){}", regex::escape(p)))
+                        .size_limit(1_000_000) // 1MB
+                        .dfa_size_limit(1_000_000) // 1MB
+                        .build() {
+                            Ok(re) => Some(re),
+                            Err(e) => {
+                                warn!("Failed to compile regex pattern '{}' for rule '{}': {}", p, rule.name, e);
+                                None
+                            }
+                        }
+                })
                 .collect();
             CompiledRule {
                 name: rule.name.clone(),
@@ -210,13 +223,20 @@ fn reload_rules_with_path(rules_path: &str) -> Result<()> {
 /// Initializes the analyzer with a specific path to the rules.json file.
 #[pyfunction]
 fn init(rules_path: &str) -> PyResult<()> {
-    initialize_analyzer(rules_path).map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+    pyo3_log::init();
+    initialize_analyzer(rules_path).map_err(|e| {
+        error!("Failed to initialize analyzer: {}", e);
+        pyo3::exceptions::PyRuntimeError::new_err(e.to_string())
+    })
 }
 
 /// Reloads the detection rules from the `rules.json` file.
 #[pyfunction]
 fn reload_rules() -> PyResult<()> {
-    reload_rules_with_path("rules.json").map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+    reload_rules_with_path("rules.json").map_err(|e| {
+        error!("Failed to reload rules: {}", e);
+        pyo3::exceptions::PyRuntimeError::new_err(e.to_string())
+    })
 }
 
 
@@ -225,6 +245,7 @@ fn reload_rules() -> PyResult<()> {
 fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<PyObject> {
     if ANALYZER.get().is_none() {
         if let Err(e) = initialize_analyzer("rules.json") {
+            error!("Failed to auto-initialize analyzer with 'rules.json'. Please call init('/path/to/rules.json') first. Error: {}", e);
             return Err(pyo3::exceptions::PyRuntimeError::new_err(format!(
                 "Failed to auto-initialize analyzer with 'rules.json'. Please call init('/path/to/rules.json') first. Error: {}", e
             )));
@@ -233,6 +254,12 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
 
     let start_time = Instant::now();
     
+    if input_string.contains('\0') {
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "Input contains null bytes, which are not allowed."
+        ));
+    }
+
     if input_string.len() > MAX_INPUT_SIZE {
         return Err(pyo3::exceptions::PyValueError::new_err(
             format!("Input too large: {} bytes (max: {})", input_string.len(), MAX_INPUT_SIZE)
@@ -246,7 +273,14 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
     let mut detection_details = Vec::new();
 
     let normalized_string = analyzer.normalize_text(input_string);
-    let suspicious_patterns = extract_suspicious_patterns(&normalized_string).unwrap_or_default();
+    
+    let suspicious_patterns = match extract_suspicious_patterns(&normalized_string) {
+        Ok(patterns) => patterns,
+        Err(e) => {
+            warn!("Failed to extract suspicious patterns: {}", e);
+            Vec::new()
+        }
+    };
 
     let compiled_rules = analyzer.compiled_rules.clone();
     for rule in &compiled_rules {
@@ -311,12 +345,17 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
     ];
 
     for (pattern_str, weight) in heuristic_patterns {
-        if let Ok(pattern) = Regex::new(pattern_str) {
-            if pattern.is_match(input_string) {
-                string_level += weight;
-                if detection_details.len() < MAX_DETECTION_DETAILS {
-                    detection_details.push(format!("Heuristic: {}", pattern_str));
+        match Regex::new(pattern_str) {
+            Ok(pattern) => {
+                if pattern.is_match(input_string) {
+                    string_level += weight;
+                    if detection_details.len() < MAX_DETECTION_DETAILS {
+                        detection_details.push(format!("Heuristic: {}", pattern_str));
+                    }
                 }
+            }
+            Err(e) => {
+                warn!("Invalid heuristic regex pattern '{}': {}", pattern_str, e);
             }
         }
     }
@@ -352,4 +391,58 @@ fn mirseo_formatter(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(analyze, m)?)?;
     m.add_function(wrap_pyfunction!(reload_rules, m)?)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setup_test_analyzer() {
+        let _ = initialize_analyzer("rules.json");
+    }
+
+    #[test]
+    fn test_initialization() {
+        setup_test_analyzer();
+        assert!(ANALYZER.get().is_some());
+    }
+
+    #[test]
+    fn test_simple_keyword_detection() {
+        setup_test_analyzer();
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| {
+            let result = analyze(py, "This is a test with DROP TABLE", "en", "ids").unwrap();
+            let dict = result.downcast_bound::<PyDict>(py).unwrap();
+            let level: f64 = dict.get_item("string_level").unwrap().unwrap().extract().unwrap();
+            assert!(level > 0.0);
+        });
+    }
+
+    #[test]
+    fn test_base64_encoded_detection() {
+        setup_test_analyzer();
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| {
+            let encoded = general_purpose::STANDARD.encode("DROP TABLE users");
+            let result = analyze(py, &encoded, "en", "ids").unwrap();
+            let dict = result.downcast_bound::<PyDict>(py).unwrap();
+            let level: f64 = dict.get_item("string_level").unwrap().unwrap().extract().unwrap();
+            let details: Vec<String> = dict.get_item("detection_details").unwrap().unwrap().extract().unwrap();
+            assert!(level > 0.0);
+            assert!(details.iter().any(|d| d.contains("(base64)")));
+        });
+    }
+
+    #[test]
+    fn test_no_threat() {
+        setup_test_analyzer();
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| {
+            let result = analyze(py, "This is a normal sentence.", "en", "ids").unwrap();
+            let dict = result.downcast_bound::<PyDict>(py).unwrap();
+            let level: f64 = dict.get_item("string_level").unwrap().unwrap().extract().unwrap();
+            assert_eq!(level, 0.0);
+        });
+    }
 }
