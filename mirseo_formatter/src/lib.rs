@@ -15,7 +15,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use chrono::Utc;
 use base64::{Engine as _, engine::general_purpose};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::{Arc, RwLock, OnceLock};
 use std::collections::HashMap;
@@ -28,7 +28,7 @@ use unicode_normalization::UnicodeNormalization;
 
 /// 기본 규칙셋을 컴파일 타임에 바이너리에 포함시킵니다.
 /// 이를 통해 별도의 `rules.json` 파일 없이도 라이브러리가 기본적으로 동작할 수 있습니다.
-const DEFAULT_RULES: &str = include_str!("../rules.json");
+const DEFAULT_RULES: &str = include_str!("../rules/rules.json");
 
 /// 라이브러리의 동작을 제어하는 설정값을 담는 구조체입니다.
 /// 환경 변수를 통해 값을 설정할 수 있으며, 설정이 없는 경우 기본값이 사용됩니다.
@@ -73,7 +73,7 @@ impl Config {
 static CONFIG: OnceLock<Config> = OnceLock::new();
 
 /// `rules.json` 파일의 각 규칙에 해당하는 구조체입니다.
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 struct Rule {
     name: String,
     #[serde(rename = "type")]
@@ -83,9 +83,43 @@ struct Rule {
 }
 
 /// `rules.json` 파일의 최상위 구조체로, 여러 개의 `Rule`을 포함합니다.
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 struct Ruleset {
     rules: Vec<Rule>,
+}
+
+/// 여러 JSON 파일에서 규칙을 로드하는 함수
+fn load_rules_from_directory(rules_dir: &str) -> Result<String> {
+    let mut combined_rules = Vec::new();
+    
+    let entries = fs::read_dir(rules_dir)
+        .with_context(|| format!("Failed to read rules directory: {}", rules_dir))?;
+    
+    for entry in entries {
+        let entry = entry?;
+        let path = entry.path();
+        
+        if path.extension() == Some(std::ffi::OsStr::new("json")) {
+            let content = fs::read_to_string(&path)
+                .with_context(|| format!("Failed to read file: {:?}", path))?;
+            
+            // JSON 배열 형태인지 확인
+            if let Ok(rules_array) = serde_json::from_str::<Vec<Rule>>(&content) {
+                let count = rules_array.len();
+                combined_rules.extend(rules_array);
+                info!("Loaded {} rules from {:?}", count, path);
+            } else if let Ok(ruleset) = serde_json::from_str::<Ruleset>(&content) {
+                let count = ruleset.rules.len();
+                combined_rules.extend(ruleset.rules);
+                info!("Loaded {} rules from {:?}", count, path);
+            } else {
+                warn!("Invalid JSON format in file: {:?}", path);
+            }
+        }
+    }
+    
+    let combined_ruleset = Ruleset { rules: combined_rules };
+    Ok(serde_json::to_string(&combined_ruleset)?)
 }
 
 /// JSON 규칙을 파싱하여 정규식 패턴을 미리 컴파일한 형태의 구조체입니다.
@@ -258,7 +292,7 @@ fn initialize_or_reload_analyzer(rules_content: &str) -> Result<()> {
 /// 다양한 방법으로 규칙을 제공할 수 있으며, 아무 인자도 제공하지 않으면 내장된 기본 규칙을 사용합니다.
 ///
 /// # Arguments
-/// * `rules_path` (Option<&str>): `rules.json` 파일의 경로.
+/// * `rules_path` (Option<&str>): `rules.json` 파일의 경로 또는 rules 디렉토리의 경로.
 /// * `rules_json_str` (Option<&str>): 규칙이 포함된 JSON 형식의 문자열.
 #[pyfunction]
 #[pyo3(signature = (rules_path = None, rules_json_str = None))]
@@ -272,10 +306,22 @@ fn init(rules_path: Option<&str>, rules_json_str: Option<&str>) -> PyResult<()> 
             initialize_or_reload_analyzer(json_str)
         },
         (None, Some(path)) => {
-            info!("Initializing from file path: {}", path);
-            let content = fs::read_to_string(path)
-                .with_context(|| format!("Failed to read rules file from path: {}", path));
-            content.and_then(|c| initialize_or_reload_analyzer(&c))
+            info!("Initializing from path: {}", path);
+            // 경로가 디렉토리인지 파일인지 확인
+            let metadata = fs::metadata(path)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to access path {}: {}", path, e)))?;
+            
+            if metadata.is_dir() {
+                info!("Loading rules from directory: {}", path);
+                let content = load_rules_from_directory(path)
+                    .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+                initialize_or_reload_analyzer(&content)
+            } else {
+                info!("Loading rules from file: {}", path);
+                let content = fs::read_to_string(path)
+                    .with_context(|| format!("Failed to read rules file from path: {}", path));
+                content.and_then(|c| initialize_or_reload_analyzer(&c))
+            }
         },
         (None, None) => {
             info!("Initializing with default embedded rules.");

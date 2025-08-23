@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Test Rule - Additional Keywords",
+    "type": "keyword",
+    "patterns": [
+      "test jailbreak",
+      "test prompt injection",
+      "additional test pattern"
+    ],
+    "weight": 0.8
+  },
+  {
+    "name": "Test Rule - Additional Encoding",
+    "type": "base64",
+    "patterns": [
+      "test pattern",
+      "another test"
+    ],
+    "weight": 0.7
+  }
+]
