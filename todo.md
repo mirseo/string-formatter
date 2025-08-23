@@ -11,3 +11,5 @@
 
 6. LLM Hacking Database - 다양한 LLM 공격 기법, FonduAI/awesome-prompt-injection
 yueliu1999/Awesome-Jailbreak-on-LLMs LM Security Database - promptfoo에서 운영  룰셋 업데이트  
+
+7. 성능 테스트 및 비교 추가  
