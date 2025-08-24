@@ -79,7 +79,7 @@ jobs:
   deploy:
     name: Deploy to Release
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && contains(github.event.head_commit.message, '!deploy')
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, 'deploy')
     needs: [linux-build, sdist]
     permissions:
       contents: write
