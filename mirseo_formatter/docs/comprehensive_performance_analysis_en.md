@@ -1,32 +1,32 @@
 # Mirseo Formatter Comprehensive Performance Analysis Report
 
-**Language**: [Korean (한국어)](comprehensive_performance_analysis.md) | **English**
+**Language**: Korean | **[English](comprehensive_performance_analysis_en.md)**
 
 ## Overview
 
-This document presents a comprehensive comparative analysis of Mirseo Formatter's three operational modes (IDS, IPS, IUS) and basic normalization methods. It particularly focuses on the revolutionary performance improvements of the newly introduced IUS (Intrusion Ultra-fast Security) mode.
+This report provides a comparative analysis of the performance of Mirseo Formatter's three operational modes (IDS, IPS, IUS) against the baseline normalization method. The introduction of IUS mode has significantly addressed previous speed limitations.
 
 ## Operational Modes Overview
 
 ### 1. IDS Mode (Intrusion Detection System)
 - **Purpose**: Threat detection and reporting
-- **Features**: Standard analysis performance, detailed detection information
+- **Features**: Standard analytical performance, detailed detection information
 - **Applications**: Security monitoring, logging systems
 
 ### 2. IPS Mode (Intrusion Prevention System)
 - **Purpose**: Threat detection and blocking
-- **Features**: Replace with safe response when risk threshold exceeded
-- **Applications**: Real-time content filtering, automatic blocking systems
+- **Features**: Replaces high-risk inputs with safe responses when thresholds are exceeded
+- **Applications**: Real-time content filtering, automated blocking systems
 
-### 3. IUS Mode (Intrusion Ultra-fast Security) 🆕
+### 3. IUS Mode (Intrusion Ultra-fast Security)
 - **Purpose**: High-performance threat detection and blocking
-- **Features**: Advanced caching, parallel processing optimization
-- **Applications**: High-volume traffic, real-time AI services
+- **Features**: Advanced caching, optimized parallel processing
+- **Applications**: High-traffic environments, real-time AI services
 
 ### 4. Basic Normalization
-- **Purpose**: Comparison baseline
+- **Purpose**: Baseline for comparison
 - **Features**: Simple pattern matching, minimal functionality
-- **Applications**: Performance-priority environments, simple filtering
+- **Applications**: Performance-critical environments, basic filtering
 
 ## Comprehensive Performance Comparison
 
@@ -46,22 +46,22 @@ This document presents a comprehensive comparative analysis of Mirseo Formatter'
 
 ![Detailed Analysis](../comprehensive_benchmark_results/detailed_analysis_ius.png)
 
-### Revolutionary Features of IUS Mode
+### Key Features of IUS Mode
 
 #### 1. High-Performance Caching System
-- **LRU Cache**: Caches normalization results, analysis results, encoding/decoding results
-- **Cache Hit Effect**: Average **1,000x+ performance improvement** (25ms → 0.02ms)
-- **Cache Hit Rate**: **67%** achieved in real-world usage
+- **LRU Cache**: Caches normalization, analysis, and encoding/decoding results to eliminate redundant computations
+- **Cache Hit Impact**: Reduces processing time for identical inputs from 25ms to 0.02ms
+- **Cache Hit Rate**: Achieves 67% in real-world usage
 
-#### 2. Intelligent Cache Strategy
-- **TTL Management**: 10-minute auto-expiry for memory efficiency
-- **Adaptive Size**: Cache size adjustable via environment variables
-- **Thread Safety**: Concurrency guaranteed using DashMap
+#### 2. Memory-Efficient Cache Management
+- **TTL Management**: 10-minute automatic expiration to limit memory usage
+- **Variable Size**: Cache size adjustable via environment variables
+- **Concurrency Support**: Safe cache access in multi-threaded environments using DashMap
 
-#### 3. Parallel Processing Ready
-- **Rayon Integration**: Support for high-volume batch processing
-- **Async Optimization**: Ready for multi-core environment utilization
-- **Scalability**: Automatic scaling based on CPU core count
+#### 3. Parallel Processing Capabilities
+- **Rayon Utilization**: Leverages multi-threading for large-scale batch processing
+- **Asynchronous Processing**: Efficient resource utilization in multi-core environments
+- **Automatic Scaling**: Thread pool adjusts dynamically based on CPU core count
 
 ### Performance Analysis by Category
 
@@ -77,42 +77,42 @@ This document presents a comprehensive comparative analysis of Mirseo Formatter'
 
 #### Performance by Text Length
 
-- **Short Text (< 50 chars)**: **3x performance improvement** with IUS mode
-- **Medium Text (50-200 chars)**: **2.5x performance improvement** with IUS mode
-- **Long Text (> 200 chars)**: **2x performance improvement** with IUS mode
-- **Cache Hit**: **Consistent high-speed processing** regardless of text length
+- **Short Text (< 50 characters)**: IUS mode shows 3x performance improvement
+- **Medium Text (50-200 characters)**: IUS mode shows 2.5x performance improvement
+- **Long Text (> 200 characters)**: IUS mode shows 2x performance improvement
+- **Cache Hit**: Consistent high-speed processing regardless of text length
 
-## Real-world Scenario Analysis
+## Real-World Scenario Analysis
 
 ### Scenario 1: AI Chatbot Service
 - **Traffic Pattern**: Repetitive user input patterns
-- **IUS Effect**: **70-80%** cache hit rate expected
-- **Performance Improvement**: Average response time **10ms → 1ms**
-- **Cost Reduction**: **60%** server resource savings
+- **IUS Impact**: Expected cache hit rate of 70-80%
+- **Performance Improvement**: Average response time reduced from 10ms to 1ms
+- **Cost Savings**: 60% reduction in server resource usage
 
 ### Scenario 2: API Gateway
-- **Traffic Pattern**: High-volume requests with some repetitive patterns
-- **IUS Effect**: **50-60%** cache hit rate expected
-- **Performance Improvement**: **2.5x** throughput increase
-- **Scalability**: Handle more requests with same hardware
+- **Traffic Pattern**: High-volume requests with some repetition
+- **IUS Impact**: Expected cache hit rate of 50-60%
+- **Performance Improvement**: 2.5x increase in throughput
+- **Scalability**: Handles more requests on the same hardware
 
-### Scenario 3: Real-time Content Filtering
-- **Traffic Pattern**: Diverse inputs, low repetition rate
-- **IUS Effect**: **30-40%** cache hit rate expected
-- **Performance Improvement**: Even first execution is **2.5x** faster
-- **Reliability**: Real-time processing with low latency
+### Scenario 3: Real-Time Content Filtering
+- **Traffic Pattern**: Diverse inputs with low repetition
+- **IUS Impact**: Expected cache hit rate of 30-40%
+- **Performance Improvement**: 2.5x faster initial processing
+- **Stability**: Low latency enables real-time processing
 
 ## Memory and Resource Usage
 
 ### Memory Usage Optimization
-- **Default Cache Size**: 10,000 entries (~1MB)
-- **Expandable**: Up to 100,000 entries via environment variables
-- **Auto-management**: LRU policy prevents memory overflow
-- **TTL Applied**: Automatic deletion of stale entries
+- **Default Cache Size**: 10,000 items (approximately 1MB)
+- **Scalability**: Configurable up to 100,000 items via environment variables
+- **Automatic Management**: LRU policy prevents memory overflow
+- **TTL Application**: Automatic deletion of stale items
 
 ### CPU Usage Optimization
-- **Parallel Processing**: Multi-threading support using Rayon
-- **Thread Pool**: Auto-adjustment based on CPU core count
+- **Parallel Processing**: Multi-threaded support using Rayon
+- **Thread Pool**: Automatically adjusts to CPU core count
 - **Batch Processing**: Efficient handling of large datasets
 
 ## Configuration and Tuning Guide
@@ -120,13 +120,13 @@ This document presents a comprehensive comparative analysis of Mirseo Formatter'
 ### Environment Variable Configuration
 
 ```bash
-# Cache size adjustment (default: 10,000)
+# Adjust cache size (default: 10,000)
 export MIRSEO_CACHE_SIZE=50000
 
-# Parallel processing thread count (default: CPU core count)
+# Set parallel processing threads (default: CPU core count)
 export MIRSEO_PARALLEL_THREADS=8
 
-# Basic settings
+# Default settings
 export MIRSEO_MAX_INPUT_SIZE=1048576
 export MIRSEO_MAX_PROCESSING_TIME_MS=100
 export MIRSEO_MAX_DETECTION_DETAILS=50
@@ -134,7 +134,7 @@ export MIRSEO_MAX_DETECTION_DETAILS=50
 
 ### Performance Tuning Recommendations
 
-#### High-Performance Environment (High-Volume Traffic)
+#### High-Performance Environment (High Traffic)
 ```bash
 export MIRSEO_CACHE_SIZE=100000
 export MIRSEO_PARALLEL_THREADS=16
@@ -148,7 +148,7 @@ export MIRSEO_PARALLEL_THREADS=4
 export MIRSEO_MAX_DETECTION_DETAILS=20
 ```
 
-#### Real-time Environment (Low Latency)
+#### Real-Time Environment (Low Latency)
 ```bash
 export MIRSEO_CACHE_SIZE=20000
 export MIRSEO_MAX_PROCESSING_TIME_MS=20
@@ -156,42 +156,42 @@ export MIRSEO_MAX_PROCESSING_TIME_MS=20
 
 ## Usage and Migration
 
-### Usage in Python
+### Using in Python
 
 ```python
 import mirseo_formatter
 
-# Initialize with IUS mode
+# Initialize in IUS mode
 mirseo_formatter.init(rules_path="./rules")
 
-# Analyze with IUS mode
+# Analyze in IUS mode
 result = mirseo_formatter.analyze(
     input_string="suspicious text",
-    lang="en", 
-    mode="ius"  # 🆕 Specify IUS mode
+    lang="ko", 
+    mode="ius"  # New IUS mode
 )
 
-# Check cache effect
-print(f"Processing time: {result['processing_time_ms']}ms")
-print(f"Cache hit: {result['cache_hit']}")
-print(f"Risk level: {result['string_level']}")
+# Check cache effects
+print(f"Processing Time: {result['processing_time_ms']}ms")
+print(f"Cache Hit: {result['cache_hit']}")
+print(f"Risk Level: {result['string_level']}")
 ```
 
 ### Migration from Existing Code
 
 ```python
-# Existing code (IDS mode)
-result = mirseo_formatter.analyze(text, "en", "ids")
+# Old code (IDS mode)
+result = mirseo_formatter.analyze(text, "ko", "ids")
 
-# New code (IUS mode) - Change just one line!
-result = mirseo_formatter.analyze(text, "en", "ius")
+# New code (IUS mode) - only one line changed!
+result = mirseo_formatter.analyze(text, "ko", "ius")
 ```
 
 ## Performance Benchmark Execution
 
-### Comprehensive Benchmark Execution
+### Comprehensive Benchmark
 ```bash
-# Compare all modes test
+# Run comparison tests for all modes
 python comprehensive_benchmark.py
 
 # Check results
@@ -207,44 +207,68 @@ python ius_mode_demo.py
 python create_visualizations.py
 ```
 
-## Conclusions and Recommendations
+## Conclusion and Recommendations
 
 ### Key Achievements
 
-1. **Performance Revolution**: **2.5x performance improvement** achieved with IUS mode
-2. **Cache Effect**: **1,000x+ speed improvement** for repeated queries
-3. **Accuracy Maintained**: **Highest level accuracy** guaranteed while improving performance
-4. **Scalability**: **Dramatically enhanced** high-volume traffic processing capability
+1. **Improved Processing Speed**: IUS mode is 2.5x faster than IDS/IPS modes
+2. **Cache Utilization**: Over 1,000x faster responses for repeated inputs
+3. **Detection Accuracy**: Slight improvement to 73% alongside performance gains
+4. **Increased Throughput**: Handles more requests on the same hardware
 
 ### Recommended Use Cases by Mode
 
-#### 🎯 IUS Mode (Highly Recommended)
-- **AI Chatbot Services**: Interactive services with many repetitive patterns
-- **API Gateways**: Systems requiring high throughput
-- **Real-time Services**: Applications where low latency is critical
-- **Production Environments**: Systems where both performance and security are important
+#### IUS Mode
+- **AI Chatbot Services**: Ideal for repetitive conversational patterns
+- **API Gateways**: Suited for high-throughput systems
+- **Real-Time Services**: Critical for low-latency applications
+- **Production Environments**: Balances performance and security
 
-#### 🔍 IDS Mode
-- **Security Monitoring**: When detailed logging and analysis are needed
-- **Development/Testing**: Feature verification and debugging phases
-- **Legacy Compatibility**: Maintaining compatibility with existing systems
+#### IDS Mode
+- **Security Monitoring**: Suitable for detailed logging and analysis
+- **Development/Testing**: Useful for feature validation and debugging
+- **Legacy Compatibility**: Maintains compatibility with existing systems
 
-#### 🛡️ IPS Mode
-- **Content Filtering**: When automatic blocking of risky content is needed
-- **Educational Environments**: Services where safe text generation is important
+#### IPS Mode
+- **Content Filtering**: Effective for automatic blocking of risky content
+- **Educational Environments**: Ensures safe text generation
 
-### Final Assessment
+## Comparison with Basic Normalization
 
-**"Speed vs Security" Dilemma Completely Resolved**
+### Features by Normalization Method
 
-- ❌ **Previous**: Sacrifice performance for security OR sacrifice security for performance
-- ✅ **IUS Mode**: **Highest Level Security + Optimal Performance** achieved simultaneously
+#### Basic Normalization
+- **Implementation**: Simple string substitution and regex
+- **Processing Time**: 0.05ms (very fast)
+- **Detection Rate**: 54.4% (low)
+- **Applications**: Suitable for simple pattern detection
 
-### Next Steps
+#### Mirseo Formatter (IDS/IPS Modes)
+- **Implementation**: Complex rule-based analysis
+- **Processing Time**: 25-30ms
+- **Detection Rate**: 71-72% (high)
+- **Applications**: Detects sophisticated bypass techniques
 
-1. **Production Deployment**: Apply IUS mode to actual services
-2. **Monitoring**: Track cache efficiency and performance metrics
-3. **Optimization**: Tune settings based on actual traffic patterns
-4. **Scaling**: Expand cache size and parallel processing as needed
+#### Mirseo Formatter (IUS Mode)
+- **Implementation**: Advanced analysis with caching and parallel processing
+- **Processing Time**: 10.2ms (average), 0.02ms (cache hit)
+- **Detection Rate**: 73% (highest)
+- **Applications**: Maintains high detection rates in high-performance environments
 
-**Conclusion**: IUS mode is a **game changer** in the AI security field. 🚀
+### Considerations for Real-World Use
+
+**When Speed is Critical**
+- Basic normalization is suitable
+- However, it is vulnerable to bypass techniques
+
+**When Security is Paramount**
+- Mirseo Formatter is recommended
+- IUS mode minimizes performance overhead
+
+**When High Throughput is Needed**
+- IUS mode significantly increases throughput via caching
+- Particularly effective for repetitive patterns
+
+## Conclusion
+
+The introduction of IUS mode has significantly resolved performance bottlenecks in Mirseo Formatter. In environments with high cache utilization, it achieves near-baseline normalization speeds while maintaining robust security. For AI services with repetitive input patterns, IUS mode is the most effective choice.
