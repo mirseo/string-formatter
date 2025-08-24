@@ -75,17 +75,26 @@ Composed of a total of 46 test cases:
 
 The following charts are generated when running the benchmark:
 
-### 1. Performance Comparison Chart (`performance_comparison.svg/png`)
-- Accuracy metrics bar graph
-- Processing time comparison
-- Accuracy by category
-- Processing time distribution box plot
+### 1. Performance Comparison Chart
 
-### 2. Detailed Analysis Chart (`detailed_analysis.svg/png`)
-- Risk score distribution histogram
-- Confusion matrix
-- Text length vs processing time scatter plot
-- Threshold analysis curves
+![Performance Comparison](../benchmark_results/performance_comparison.png)
+
+This chart provides the following information:
+- **Accuracy Metrics Bar Graph**: Comparison of Accuracy, Precision, Recall, F1-Score
+- **Processing Time Comparison**: Average and median processing times
+- **Accuracy by Category**: Detection performance by attack type
+- **Processing Time Distribution Box Plot**: Time variance and outliers
+
+### 2. Detailed Analysis Chart
+
+![Detailed Analysis](../benchmark_results/detailed_analysis.png)
+
+This chart includes the following analyses:
+- **Risk Score Distribution Histogram**: Score distribution patterns of both methods
+- **Confusion Matrix**: Actual vs predicted results matrix
+- **Processing Time by Category**: Performance differences by attack type
+- **Text Length vs Processing Time Scatter Plot**: Correlation between input size and performance
+- **Threshold Analysis Curves**: Performance changes across various thresholds
 
 ## Conclusions and Recommendations
 
