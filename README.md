@@ -122,7 +122,7 @@ Mirseo Formatter는 세 가지 모드(**IDS, IPS, IUS**)와 \*\*기본 정규화
 
 #### **1. 종합 성능 비교**
 
-![Comprehensive Comparison](comprehensive_benchmark_results/comprehensive_comparison.png)
+![Comprehensive Comparison](comprehensive_benchmark_results/modes_comprehensive_comparison.png)
 
 * IUS 모드는 **IDS 대비 약 8.5배 빠름**
 * IDS / IPS는 동일한 정확도를 유지하나 처리 속도에서 IUS보다 뒤처짐
@@ -130,7 +130,7 @@ Mirseo Formatter는 세 가지 모드(**IDS, IPS, IUS**)와 \*\*기본 정규화
 
 #### **2. IUS 캐시 효율 분석**
 
-![Cache Analysis](comprehensive_benchmark_results/cache_analysis.png)
+![Cache Analysis](comprehensive_benchmark_results/detailed_analysis_ius.png)
 
 * 캐시 히트율: **87.9%**
 * 캐시 히트 시 응답속도 **1ms 이내**
@@ -165,9 +165,3 @@ Mirseo Formatter는 세 가지 모드(**IDS, IPS, IUS**)와 \*\*기본 정규화
 * 합리적인 `weight` 설정 권장
 
 ---
-
-## **참고 자료**
-
-* [성능 비교 차트](comprehensive_benchmark_results/comprehensive_comparison.png)
-* [IUS 캐시 분석 차트](comprehensive_benchmark_results/cache_analysis.png)
-* [벤치마크 데이터(JSON)](comprehensive_benchmark_results/comprehensive_benchmark_data.json)

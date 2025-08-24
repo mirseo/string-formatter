@@ -115,14 +115,3 @@
 * **추천 모드:** **IUS**
 
 ---
-
-## **첨부 자료**
-
-* **성능 비교 차트:**
-![comprehensive_comparison](../comprehensive_benchmark_results/comprehensive_comparison.png)
-
-* **IUS 캐시 분석 차트:**
-![cache_analysis](../comprehensive_benchmark_results/cache_analysis.png)
-
-* **원본 벤치마크 데이터:**
-![comprehensive_benchmark_data](../comprehensive_benchmark_results/comprehensive_benchmark_data.json)
