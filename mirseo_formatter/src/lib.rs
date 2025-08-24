@@ -548,7 +548,7 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
                 input_string
             };
             
-            let result = PyDict::new_bound(py);
+            let result = PyDict::new(py);
             result.set_item("timestamp", Utc::now().to_rfc3339())?;
             result.set_item("string_level", cached_level)?;
             result.set_item("lang", lang)?;
@@ -685,7 +685,7 @@ fn analyze(py: Python, input_string: &str, lang: &str, mode: &str) -> PyResult<P
 
     let processing_time = start_time.elapsed().as_millis();
 
-    let result = PyDict::new_bound(py);
+    let result = PyDict::new(py);
     result.set_item("timestamp", Utc::now().to_rfc3339())?;
     result.set_item("string_level", string_level)?;
     result.set_item("lang", lang)?;
