@@ -268,7 +268,3 @@ python create_visualizations.py
 **When High Throughput is Needed**
 - IUS mode significantly increases throughput via caching
 - Particularly effective for repetitive patterns
-
-## Conclusion
-
-The introduction of IUS mode has significantly resolved performance bottlenecks in Mirseo Formatter. In environments with high cache utilization, it achieves near-baseline normalization speeds while maintaining robust security. For AI services with repetitive input patterns, IUS mode is the most effective choice.
