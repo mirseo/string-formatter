@@ -73,28 +73,42 @@ Composed of a total of 46 test cases:
 
 ## Visualization Results
 
+### Basic Performance Comparison (IDS vs Basic Normalization)
+
 The following charts are generated when running the benchmark:
 
-### 1. Performance Comparison Chart
+#### 1. Basic Performance Comparison Chart
 
 ![Performance Comparison](../benchmark_results/performance_comparison.png)
 
-This chart provides the following information:
-- **Accuracy Metrics Bar Graph**: Comparison of Accuracy, Precision, Recall, F1-Score
-- **Processing Time Comparison**: Average and median processing times
-- **Accuracy by Category**: Detection performance by attack type
-- **Processing Time Distribution Box Plot**: Time variance and outliers
-
-### 2. Detailed Analysis Chart
+#### 2. Basic Detailed Analysis Chart
 
 ![Detailed Analysis](../benchmark_results/detailed_analysis.png)
 
-This chart includes the following analyses:
-- **Risk Score Distribution Histogram**: Score distribution patterns of both methods
-- **Confusion Matrix**: Actual vs predicted results matrix
-- **Processing Time by Category**: Performance differences by attack type
-- **Text Length vs Processing Time Scatter Plot**: Correlation between input size and performance
-- **Threshold Analysis Curves**: Performance changes across various thresholds
+### 🆕 Comprehensive Mode Comparison (IDS vs IPS vs IUS vs Basic)
+
+#### 1. Comprehensive Performance Comparison Chart
+
+![Comprehensive Performance Comparison](../comprehensive_benchmark_results/modes_comprehensive_comparison.png)
+
+This chart provides a comprehensive comparison of all four methods:
+- **Detection Accuracy Comparison**: Accuracy metrics for all modes
+- **Processing Time Comparison (Log Scale)**: Clear visualization of performance differences
+- **Cache Performance**: IUS mode cache effectiveness
+- **Performance Improvement**: Improvement over basic method
+- **IUS Cache Analysis**: Performance changes with cache buildup
+- **Overall Performance Score**: Final evaluation combining accuracy and speed
+
+#### 2. IUS Mode Detailed Analysis Chart
+
+![IUS Detailed Analysis](../comprehensive_benchmark_results/detailed_analysis_ius.png)
+
+This chart provides detailed analysis of IUS mode's advanced features:
+- **Cache Effect by Category**: Cache performance by attack type
+- **Cache Impact Analysis**: Processing time differences between cache hits/misses
+- **Performance Improvement Analysis**: Improvement between IUS and IDS modes
+- **Performance Trend Over Time**: Performance changes during cache buildup process
+- **Memory vs Performance**: Trade-offs based on cache size
 
 ## Conclusions and Recommendations
 
