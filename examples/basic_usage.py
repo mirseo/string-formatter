@@ -5,10 +5,10 @@ def main():
     # It is recommended to initialize the analyzer with the path to your rules.json file.
     # This is especially important if you are not running your script from the project root.
     try:
-        rules_path = "rules.json"
+        rules_path = "mirseo_formatter/rules/rules.json"
         if not os.path.exists(rules_path):
             # Fallback for running from inside the examples directory
-            rules_path = os.path.join("..", "rules.json")
+            rules_path = os.path.join("..", "mirseo_formatter", "rules", "rules.json")
         
         mf.init(rules_path)
         print(f"Analyzer initialized with rules from: {os.path.abspath(rules_path)}")
