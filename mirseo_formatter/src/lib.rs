@@ -17,7 +17,7 @@ use chrono::Utc;
 use base64::{Engine as _, engine::general_purpose};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::sync::{Arc, RwLock, OnceLock};
+use std::sync::{Arc, RwLock, OnceLock, Once};
 use std::collections::HashMap;
 use regex::{Regex, RegexBuilder};
 use std::time::Instant;
@@ -92,6 +92,8 @@ impl Config {
 
 /// 설정을 전역적으로 저장하기 위한 정적 변수입니다. `OnceLock`을 사용하여 한 번만 초기화됩니다.
 static CONFIG: OnceLock<Config> = OnceLock::new();
+/// 로깅 초기화를 한 번만 수행하기 위한 인스턴스입니다.
+static LOG_INIT: Once = Once::new();
 
 /// `rules.json` 파일의 각 규칙에 해당하는 구조체입니다.
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -465,7 +467,11 @@ fn initialize_or_reload_analyzer(rules_content: &str) -> Result<()> {
 #[pyfunction]
 #[pyo3(signature = (rules_path = None, rules_json_str = None))]
 fn init(rules_path: Option<&str>, rules_json_str: Option<&str>) -> PyResult<()> {
-    pyo3_log::init();
+    // pyo3_log::init();
+    // 한번만 실행하도록 수정
+    LOG_INIT.call_once(|| {
+        let _ = pyo3_log::init();
+    });
     CONFIG.get_or_init(Config::from_env);
 
     let result = match (rules_json_str, rules_path) {
