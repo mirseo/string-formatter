@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "mirseo_formatter"
-crate-type = ["cdylib"]
+crate-type = ["cdylib","extension-module", "abi3-py38"]
 
 [dependencies]
 pyo3 = { version = "0.21.2", features = ["macros"] }

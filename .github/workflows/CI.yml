@@ -11,7 +11,8 @@ permissions:
   contents: read
 
 env:
-  PKG_DIR: ./mirseo_formatter  
+  PKG_DIR: ./mirseo_formatter
+  PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
 jobs:
   linux:
     runs-on: ${{ matrix.platform.runner }}
