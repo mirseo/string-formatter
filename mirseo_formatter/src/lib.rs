@@ -63,7 +63,7 @@ impl Config {
         let max_processing_time_ms = env::var("MIRSEO_MAX_PROCESSING_TIME_MS")
             .ok()
             .and_then(|s| s.parse().ok())
-            .unwrap_or(100); // 기본값: 100ms
+            .unwrap_or(500); // 기본값: 500ms
 
         let max_detection_details = env::var("MIRSEO_MAX_DETECTION_DETAILS")
             .ok()
