@@ -1,10 +1,10 @@
 # Mirseo Formatter
 
-[한국어 문서 (Korean Document)](README.ko.md)
+[한국어 문서 (Korean Document)](README.md)
 
 A high-performance, security-focused string analysis library for AI applications, built with Rust and accessible from Python. It's designed to detect and mitigate various text-based attacks such as prompt injection and jailbreaking attempts.
 
-## ✨ Features
+## Features
 
 - **Rule-Based Detection**: Utilizes a flexible JSON-based ruleset to identify potential threats.
 - **Multi-Encoding Support**: Detects threats not only in plain text but also within Base64 or Hex encoded strings.
@@ -12,7 +12,7 @@ A high-performance, security-focused string analysis library for AI applications
 - **Flexible Configuration**: Easily configure settings like rule paths, timeouts, and input size limits via environment variables or directly in your Python code.
 - **Comprehensive Logging**: Integrates with Python's standard `logging` module to provide insights into internal operations, aiding in debugging.
 
-## 📦 Installation
+## Installation
 
 The package can be installed from PyPI using pip:
 
@@ -20,7 +20,7 @@ The package can be installed from PyPI using pip:
 pip install mirseo-formatter
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 Here is a basic example of how to use the library:
 
@@ -64,7 +64,7 @@ print(json.dumps(result, indent=2))
 }
 ```
 
-## ⚙️ Advanced Usage
+## Advanced Usage
 
 ### Loading Custom Rules
 
@@ -94,7 +94,7 @@ export MIRSEO_MAX_INPUT_SIZE=8192
 python your_app.py
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! If you'd like to contribute, please follow these steps:
 
@@ -110,6 +110,6 @@ Contributions are welcome! If you'd like to contribute, please follow these step
 4.  **Run tests:** Ensure all existing tests pass.
 5.  **Submit a pull request.**
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
