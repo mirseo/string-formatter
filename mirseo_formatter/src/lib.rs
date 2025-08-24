@@ -461,14 +461,16 @@ fn initialize_or_reload_analyzer(rules_content: &str) -> Result<()> {
 /// 이 함수는 라이브러리를 사용하기 전에 호출하여 규칙셋과 설정을 로드합니다.
 /// 다양한 방법으로 규칙을 제공할 수 있으며, 아무 인자도 제공하지 않으면 내장된 기본 규칙을 사용합니다.
 ///
+/// `init()`은 여러 번 호출될 수 있으며, 호출될 때마다 새로운 규칙으로 분석기를 재초기화합니다.
+/// 이를 통해 실행 중에도 규칙을 동적으로 변경할 수 있습니다.
+///
 /// # Arguments
 /// * `rules_path` (Option<&str>): `rules.json` 파일의 경로 또는 rules 디렉토리의 경로.
 /// * `rules_json_str` (Option<&str>): 규칙이 포함된 JSON 형식의 문자열.
 #[pyfunction]
 #[pyo3(signature = (rules_path = None, rules_json_str = None))]
 fn init(rules_path: Option<&str>, rules_json_str: Option<&str>) -> PyResult<()> {
-    // pyo3_log::init();
-    // 한번만 실행하도록 수정
+    // Initialize logging only once to avoid repeated init panics
     LOG_INIT.call_once(|| {
         let _ = pyo3_log::init();
     });
@@ -716,6 +718,12 @@ fn mirseo_formatter(m: &Bound<'_, PyModule>) -> PyResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, OnceLock, MutexGuard};
+
+    fn test_lock() -> MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    }
 
     fn setup_test_analyzer() {
         let _ = initialize_or_reload_analyzer(DEFAULT_RULES);
@@ -723,12 +731,14 @@ mod tests {
 
     #[test]
     fn test_initialization() {
+        let _guard = test_lock();
         setup_test_analyzer();
         assert!(ANALYZER.get().is_some());
     }
 
     #[test]
     fn test_simple_keyword_detection() {
+        let _guard = test_lock();
         setup_test_analyzer();
         pyo3::prepare_freethreaded_python();
         Python::with_gil(|py| {
@@ -741,6 +751,7 @@ mod tests {
 
     #[test]
     fn test_base64_encoded_detection() {
+        let _guard = test_lock();
         setup_test_analyzer();
         pyo3::prepare_freethreaded_python();
         Python::with_gil(|py| {
@@ -756,6 +767,7 @@ mod tests {
 
     #[test]
     fn test_no_threat() {
+        let _guard = test_lock();
         setup_test_analyzer();
         pyo3::prepare_freethreaded_python();
         Python::with_gil(|py| {
@@ -764,5 +776,40 @@ mod tests {
             let level: f64 = dict.get_item("string_level").unwrap().unwrap().extract().unwrap();
             assert!(level < 0.1); // Heuristic에 의한 약간의 점수는 허용
         });
+    }
+
+    #[test]
+    fn test_dynamic_rule_reload() {
+        let _guard = test_lock();
+        // Load rules detecting the word "alpha"
+        let rules_alpha = r#"{"rules":[{"name":"r1","type":"keyword","patterns":["alpha"],"weight":1.0}]}"#;
+        initialize_or_reload_analyzer(rules_alpha).unwrap();
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| {
+            let result = analyze(py, "alpha", "en", "ids").unwrap();
+            let dict = result.downcast_bound::<PyDict>(py).unwrap();
+            let level: f64 = dict.get_item("string_level").unwrap().unwrap().extract().unwrap();
+            assert!(level > 0.0);
+        });
+
+        // Reload with rules detecting "beta" instead
+        let rules_beta = r#"{"rules":[{"name":"r2","type":"keyword","patterns":["beta"],"weight":1.0}]}"#;
+        initialize_or_reload_analyzer(rules_beta).unwrap();
+        Python::with_gil(|py| {
+            // "alpha" should no longer be detected
+            let res_alpha = analyze(py, "alpha", "en", "ids").unwrap();
+            let dict_alpha = res_alpha.downcast_bound::<PyDict>(py).unwrap();
+            let level_alpha: f64 = dict_alpha.get_item("string_level").unwrap().unwrap().extract().unwrap();
+            assert_eq!(level_alpha, 0.0);
+
+            // "beta" should now be detected
+            let res_beta = analyze(py, "beta", "en", "ids").unwrap();
+            let dict_beta = res_beta.downcast_bound::<PyDict>(py).unwrap();
+            let level_beta: f64 = dict_beta.get_item("string_level").unwrap().unwrap().extract().unwrap();
+            assert!(level_beta > 0.0);
+        });
+
+        // Restore default rules for other tests
+        initialize_or_reload_analyzer(DEFAULT_RULES).unwrap();
     }
 }
