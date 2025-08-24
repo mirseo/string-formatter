@@ -68,16 +68,23 @@ print(json.dumps(result, indent=2))
 
 ### Loading Custom Rules
 
-You can load rules from a custom file path or directly from a JSON string.
+You can load rules from a custom file path, directory, or directly from a JSON string.
 
 ```python
-# 1. Load from a file path
+# 1. Load from a single file
 mirseo_formatter.init(rules_path="/path/to/your/rules.json")
 
-# 2. Load from a JSON string
+# 2. Load from a directory (recommended - loads all .json files)
+mirseo_formatter.init(rules_path="/path/to/rules/directory")
+
+# 3. Load from a JSON string
 rules_str = '{"rules": [{"name": "Custom Rule", "type": "keyword", "patterns": ["custom pattern"], "weight": 0.9}]}'
 mirseo_formatter.init(rules_json_str=rules_str)
 ```
+
+For detailed information about rule configuration and management, please refer to our comprehensive guides:
+- **[Rules Guide (English)](docs/rules_guide_en.md)**
+- **[규칙 가이드 (한국어)](docs/rules_guide.md)**
 
 ### Configuration via Environment Variables
 

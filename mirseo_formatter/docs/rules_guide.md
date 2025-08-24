@@ -1,5 +1,7 @@
 # Mirseo Formatter 규칙 가이드
 
+**언어**: **한국어** | [English](rules_guide_en.md)
+
 ## 개요
 
 Mirseo Formatter는 AI 모델에 대한 다양한 공격 패턴을 탐지하기 위해 규칙 기반 시스템을 사용합니다. 이 문서는 규칙 시스템의 작동 방식과 사용법에 대해 설명합니다.
