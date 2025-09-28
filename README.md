@@ -4,7 +4,7 @@ High-performance, security-focused string formatter and injection attack detecti
 
 ---
 ## **Language**
-- KO (한국어) ([./README_ko.md])
+- KO (한국어) (./README_ko.md)
 
 ## **Overview**
 
