@@ -3,8 +3,6 @@
 High-performance, security-focused string formatter and injection attack detection library
 
 ---
-## **Language**
-- KO (한국어) (./README_ko.md)
 
 ## **Overview**
 
